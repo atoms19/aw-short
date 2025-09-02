@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>My Vite App</title>
+	<link rel="stylesheet" href="/style.css" />
+</head>
+
+<body>
+  <main>
+	<nav class="navbar">
+		<h1 class="logo">AW-Shortlink</h1>
+	</nav>
+
+	<p>Shorten large ugly URLs make them appealing, all free of cost</p>
+
+	<section class="form-container">
+		<form id="shorten-form">
+			<input type="url" id="longurl-input" placeholder="Enter your URL here..." required>
+			<button type="submit" class="primary">Shorten</button>
+		</form>
+	</section>
+
+	<section id="result-container" style="display:none; margin-top:20px;">
+		<p>Your shortened URL:</p>
+		<a id="shortened-url" href="#" target="_blank"></a>
+		<div style="margin-top:10px;display:flex; gap:10px;">
+			<button id="copy-btn">copy to clipboard</button>
+			<button id="share-btn">Share</button>
+		</div>
+	</section>
+  </main>
+
+	<script type="module">
+		import d from "https://esm.sh/dominity@latest"
+
+		let longUrl = d.state('')
+		let shortenedUrl = d.state('')
+
+
+		d.$el("#longurl-input").model(longUrl);
+		d.$el("#result-container").showIf(() => shortenedUrl.value !== '');
+		d.$el("#shortened-url", shortenedUrl, {href: () => shortenedUrl.value})
+
+		d.$el("#shorten-form").on("submit", async (e) => {
+			e.preventDefault();
+			const response = await fetch('/api/shorten', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({longUrl: longUrl.value})
+			})
+			const data = await response.json();
+			shortenedUrl.value =window.location.origin+'/'+ data.shortUrl;
+		});
+
+		d.$el("#copy-btn").on("click", async () => {
+			try {
+				await navigator.clipboard.writeText(shortenedUrl.value);
+			} catch (err) {
+			}
+		});
+
+		d.$el("#share-btn").on("click", async () => {
+			if (navigator.share) {
+				try {
+					await navigator.share({
+						title: 'Check out this shortened URL',
+						url: shortenedUrl.value
+					});
+				} catch (err) {
+				}
+			} else {
+				alert('Web Share API is not supported in your browser.');
+			}
+		});
+
+
+	</script>
+</body>
+
+</html>
